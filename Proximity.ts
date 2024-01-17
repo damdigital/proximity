@@ -190,7 +190,6 @@ export const requestNotificationPermissionsAsync = async (): Promise<boolean> =>
             },
         });
         granted = parsePermissionStatus(res)
-        alert(`Notification permission granted ${granted}`)
     } catch (error) {
         console.error(error, `Error occured ${error?.message}`)
     }
@@ -223,14 +222,12 @@ export const requestLocationPermissionsAsync = async (): Promise<Location.Permis
     let ret: Location.PermissionStatus
     try {
         let { status } = await Location.requestForegroundPermissionsAsync();
-        alert(`Foreground location permission status ${status}`)
         ret = status
         if (status !== Location.PermissionStatus.GRANTED) {
             console.log(`Permission to access location was ${status}`);
         } else {
             // your app can't obtain background permission without foreground permission
             let { status } = await Location.requestBackgroundPermissionsAsync();
-            alert(`Background location permission status ${status}`)
             ret = status
             if (status !== Location.PermissionStatus.GRANTED) {
                 console.log(`Permission to background access location was ${status}`);
@@ -396,13 +393,12 @@ const processEvent = async ({ eventType, region }: GeofencingEvent) => {
     _region.guid = mkGUID()
     console.debug(`Processing '${parsedEventType}' event ${_region.name}(${region.identifier}) ${_region.guid}`) // ${JSON.stringify({ region: _region, eventType: parsedEventType }, null, 2)}`, { region: _region, eventType: parsedEventType })
     const validationOutcome = await validateRegion(_region, eventType)
+    const regionStatus = await getRegionStatus(_region.identifier);
     if (!isValid(validationOutcome)) {
         if (validationOutcome.validRegion && !validationOutcome.validInitialExit && eventType === GeofencingEventType.Exit) {
-            const regionStatus = await getRegionStatus(_region.identifier);
-            regionStatus.initialExitCalled = true;
-            setRegionStatus(_region.identifier, regionStatus)
+            setRegionStatus(_region.identifier, { ...regionStatus, initialExitCalled: true })
         }
-        return
+        // return
     }
     try {
         const regionMessage = await getRegionMessage(_region)
@@ -425,13 +421,19 @@ const processEvent = async ({ eventType, region }: GeofencingEvent) => {
             Notifications.scheduleNotificationAsync({
                 content: {
                     title,
+                    body: JSON.stringify({
+                        event: `${validationOutcome.region.name} ${eventType === GeofencingEventType.Enter ? 'Enter' : 'Exit'}`,
+                        ...{ ...validationOutcome, region: undefined },
+                        lastExit: regionStatus.lastExit,
+                        lastEnter: regionStatus.lastEnter,
+                        initialExitCalled: regionStatus.initialExitCalled
+                    }, null, 2),
                     data: {
                         url
                     }
                 },
                 trigger: null,
             });
-            const regionStatus = await getRegionStatus(_region.identifier);
             switch (eventType) {
                 case GeofencingEventType.Exit:
                     regionStatus.initialExitCalled = true;
