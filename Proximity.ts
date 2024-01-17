@@ -434,16 +434,18 @@ const processEvent = async ({ eventType, region }: GeofencingEvent) => {
                 },
                 trigger: null,
             });
-            switch (eventType) {
-                case GeofencingEventType.Exit:
-                    regionStatus.initialExitCalled = true;
-                    regionStatus.lastExit = Date.now()
-                    break
-                case GeofencingEventType.Enter:
-                    regionStatus.lastEnter = Date.now()
-                    break
+            if (isValid(validationOutcome)) {
+                switch (eventType) {
+                    case GeofencingEventType.Exit:
+                        regionStatus.initialExitCalled = true;
+                        regionStatus.lastExit = Date.now()
+                        break
+                    case GeofencingEventType.Enter:
+                        regionStatus.lastEnter = Date.now()
+                        break
+                }
+                setRegionStatus(_region.identifier, regionStatus)
             }
-            setRegionStatus(_region.identifier, regionStatus)
         } else {
             console.log('Fetch failed')
         }
