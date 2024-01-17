@@ -190,6 +190,7 @@ export const requestNotificationPermissionsAsync = async (): Promise<boolean> =>
             },
         });
         granted = parsePermissionStatus(res)
+        alert(`Notification permission granted ${granted}`)
     } catch (error) {
         console.error(error, `Error occured ${error?.message}`)
     }
@@ -222,12 +223,14 @@ export const requestLocationPermissionsAsync = async (): Promise<Location.Permis
     let ret: Location.PermissionStatus
     try {
         let { status } = await Location.requestForegroundPermissionsAsync();
+        alert(`Foreground location permission status ${status}`)
         ret = status
         if (status !== Location.PermissionStatus.GRANTED) {
             console.log(`Permission to access location was ${status}`);
         } else {
             // your app can't obtain background permission without foreground permission
             let { status } = await Location.requestBackgroundPermissionsAsync();
+            alert(`Background location permission status ${status}`)
             ret = status
             if (status !== Location.PermissionStatus.GRANTED) {
                 console.log(`Permission to background access location was ${status}`);
